@@ -4,7 +4,7 @@ from src.market_making import market_making
 if __name__ == "__main__":
     try:
 
-        market_making(20, 3, 10, 0.00009)
+        market_making(30, 5, 20, 0.00009)
 
     except KeyboardInterrupt:
         print("Main process interrupted")
