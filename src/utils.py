@@ -204,6 +204,8 @@ def calculate_order_size(
     order_size = max(min(raw_order_size, max_order_size), min_order_size)
     if order_size == max_order_size:
         order_size = order_size + random.uniform(-5, 5)
+    if order_size == min_order_size:
+        order_size = order_size + random.uniform(-0.5, 0.5)
 
     return order_size
 
