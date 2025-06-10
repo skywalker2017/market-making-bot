@@ -15,11 +15,13 @@ from src.utils import (
     get_order_book,
     get_buy_price_in_spread,
     get_sell_price_in_spread,
+    get_target_price,
 )
 
 buy_order_ids = []
 sell_order_ids = []
-SYMBOL = "token_usdt"
+SYMBOL = "itx_usdt"
+BTC_SYMBOL = "btc_usdt"
 
 
 def market_making(
@@ -30,21 +32,23 @@ def market_making(
 ):
     try:
         initial_balance = fetch_account_balance()
+        print("initial_balance", initial_balance)
         initial_usdt_balance = (
             initial_balance["usdt"]["free"] + initial_balance["usdt"]["locked"]
         )
         initial_safi_balance = (
-            initial_balance["safi"]["free"] + initial_balance["safi"]["locked"]
+            initial_balance["itx"]["free"] + initial_balance["itx"]["locked"]
         )
 
         while True:
             try:
-                order_book = get_order_book("safi_usdt")
+                order_book = get_order_book(SYMBOL)
+                print("order_book", order_book)
 
                 balance = fetch_account_balance()
 
                 usdt_balance = balance["usdt"]["free"] + balance["usdt"]["locked"]
-                safi_balance = balance["safi"]["free"] + balance["safi"]["locked"]
+                safi_balance = balance["itx"]["free"] + balance["itx"]["locked"]
 
                 usdt_change = calculate_percentage_change(
                     initial_usdt_balance, usdt_balance
@@ -54,10 +58,10 @@ def market_making(
                 )
 
                 # Check if changes exceed the pause thresholds
-                if usdt_change < -10:
-                    usdt_pause = True
-                if safi_change < -10:
-                    safi_pause = True
+                # if usdt_change < -10:
+                #     usdt_pause = True
+                # if safi_change < -10:
+                #     safi_pause = True
 
                 # Check if changes have recovered
                 if usdt_change > -1:
@@ -73,14 +77,24 @@ def market_making(
                     # The price a seller is willing to accept
                     ask_price = float(data["askPrice"])
 
+                    target_price = get_target_price()
+                    spread = 0.01
+
+                    if target_price < bid_price:
+                        base_buy_price = bid_price * (1 - spread)
+                        base_sell_price = ask_price * (1 - spread)
+                    elif target_price > ask_price:
+                        base_buy_price = bid_price * (1 + spread)
+                        base_sell_price = ask_price * (1 + spread)
+                    else:
+                        base_buy_price = bid_price * (1 + spread)
+                        base_sell_price = ask_price * (1 - spread)
+
                     # Calculate market volatility
                     current_volatility = get_dynamic_volatilit(60)
 
                     # Dynamic Spread: More sophisticated and responsive strategy that adapts to market volatility.
                     # spread = calculate_dynamic_spread(current_volatility)
-                    spread = 0.01
-                    base_buy_price = bid_price * (1 - spread)
-                    base_sell_price = ask_price * (1 + spread)
 
                     # Check if there is other self made orders
                     current_orders_number = get_num_of_orders()

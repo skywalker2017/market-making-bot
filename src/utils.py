@@ -2,18 +2,18 @@ import logging
 import numpy as np
 from lbank.old_api import BlockHttpClient
 from datetime import datetime, timedelta, timezone
-
+import random
 
 client = BlockHttpClient(
-    sign_method="RSA",
-    api_key="API_KEY",
-    api_secret="API_SECRET",
+    sign_method="HMACSHA256",
+    api_key="",
+    api_secret="",
     base_url="https://www.lbkex.net/",
     log_level=logging.ERROR,
 )
 
-pair = "token_usdt"
-token_symbol = "token"
+pair = "itx_usdt"
+token_symbol = "itx"
 
 
 def get_order_book(symbol):
@@ -72,7 +72,9 @@ def place_order(symbol, side, amount, price=None):
     if price is not None:
         payload["price"] = price
 
-    return client.http_request("post", path, payload=payload)
+    print(f"payload: {payload}")
+
+    #return client.http_request("post", path, payload=payload)
 
 
 def cancel_all_orders(symbol):
@@ -290,6 +292,14 @@ def calculate_standard_deviation(price_changes):
     """
     return np.std(price_changes)
 
+def get_target_price():
+    btc_price = get_current_price("btc_usdt")
+    # Add a random fluctuation between -5% and +5% of the base price
+    fluctuation = random.uniform(0.998, 1.002)
+    target_price = (btc_price / 100000) * fluctuation
+    return target_price
+    
+
 
 def get_dynamic_volatilit(period):
     """
@@ -302,15 +312,18 @@ def get_dynamic_volatilit(period):
     Returns:
     - float: volatilit
     """
-    price_data = fetch_historical_prices(period)  # In minutes
-    price_changes = calculate_price_changes(price_data)
-    current_volatility = calculate_standard_deviation(price_changes)
+    # Random between 0.1 and 0.5
+    random_volatility = random.uniform(0.1, 0.5)
+    return random_volatility
+    # price_data = fetch_historical_prices(period)  # In minutes
+    # price_changes = calculate_price_changes(price_data)
+    # current_volatility = calculate_standard_deviation(price_changes)
 
-    if current_volatility == 0:
-        period += 60
-        get_dynamic_volatilit(period)
+    # if current_volatility == 0:
+    #     period += 60
+    #     get_dynamic_volatilit(period)
 
-    return current_volatility
+    # return current_volatility
 
 
 def calculate_order_sizes(total_order_size, num_orders):
@@ -380,12 +393,13 @@ def get_current_orders():
     -
 
     """
-    path = "v2/supplement/orders_info_no_deal.do"
-    payload = {"symbol": pair, "current_page": "1", "page_length": "200"}
+    path = "v2/supplement/orders_info_history.do"
+    payload = {"symbol": "btc_usdt", "current_page": "1", "page_length": "200"}
     res = client.http_request("POST", path, payload=payload)
     return res
 
 
 def get_num_of_orders():
+    print(f"get_num_of_orders: {get_current_orders()}")
     list_of_orders = get_current_orders()["data"]["orders"]
     return len(list_of_orders)
