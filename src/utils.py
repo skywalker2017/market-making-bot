@@ -74,7 +74,7 @@ def place_order(symbol, side, amount, price=None):
 
     print(f"payload: {payload}")
 
-    #return client.http_request("post", path, payload=payload)
+    return client.http_request("post", path, payload=payload)
 
 
 def cancel_all_orders(symbol):
@@ -148,7 +148,7 @@ def get_current_price(symbol):
 
 
 def calculate_order_size(
-    order_type, volatility, max_order_size, min_order_size, risk_percentage=None
+    order_type, qty, max_order_size, min_order_size, risk_percentage=None
 ):
     """
     Calculate the order size based on risk management.
@@ -163,47 +163,49 @@ def calculate_order_size(
     Returns:
     - order_size: The calculated order size.
     """
-    current_price = get_current_price(pair)
+    # current_price = get_current_price(pair)
 
-    # Fetch account balance
-    account_balances = fetch_account_balance()
+    # # Fetch account balance
+    # account_balances = fetch_account_balance()
 
-    if order_type == "sell":
-        # Use the token_symbol balance for sell orders
-        asset_balance = account_balances[token_symbol]["free"]
-    elif order_type == "buy":
-        # Use the USDT balance for buy orders
-        usdt_balance = account_balances["usdt"]["free"]
-        # Convert USDT balance to token_symbol
-        asset_balance = usdt_balance / current_price
+    # if order_type == "sell":
+    #     # Use the token_symbol balance for sell orders
+    #     asset_balance = account_balances[token_symbol]["free"]
+    # elif order_type == "buy":
+    #     # Use the USDT balance for buy orders
+    #     usdt_balance = account_balances["usdt"]["free"]
+    #     # Convert USDT balance to token_symbol
+    #     asset_balance = usdt_balance / current_price
 
-    # Optionally apply a risk percentage if provided
-    if risk_percentage is not None:
-        risk_amount = asset_balance * risk_percentage
-    else:
-        risk_amount = asset_balance  # Use the full balance without risk adjustment
+    # # Optionally apply a risk percentage if provided
+    # if risk_percentage is not None:
+    #     risk_amount = asset_balance * risk_percentage
+    # else:
+    #     risk_amount = asset_balance  # Use the full balance without risk adjustment
 
-    # Ensure max_order_size does not exceed the available balance
-    if max_order_size > risk_amount:
-        max_order_size = risk_amount
+    # # Ensure max_order_size does not exceed the available balance
+    # if max_order_size > risk_amount:
+    #     max_order_size = risk_amount
 
     # Adjust order size based on volatility
-    volatility_adjustment = 1 / (volatility + 1)
+    # volatility_adjustment = 1 / (volatility + 1)
 
     # Calculate the raw order size
+    random_multiplier = random.uniform(0.5, 1.5)
     raw_order_size = (
-        risk_amount * volatility_adjustment / current_price
-        if order_type == "buy"
-        else risk_amount * volatility_adjustment
+        qty * random_multiplier
     )
 
     # Ensure the order size is within defined limits
     order_size = max(min(raw_order_size, max_order_size), min_order_size)
+    if order_size == max_order_size:
+        order_size = order_size + random.uniform(-5, 5)
 
     return order_size
 
 
-def get_dynamic_sleep_time(volatility):
+def get_dynamic_sleep_time():
+    return 20
     """
     Get dynamic sleep time based on market volatility.
 
@@ -296,7 +298,7 @@ def get_target_price():
     btc_price = get_current_price("btc_usdt")
     # Add a random fluctuation between -5% and +5% of the base price
     fluctuation = random.uniform(0.998, 1.002)
-    target_price = (btc_price / 100000) * fluctuation
+    target_price = (btc_price / 110000) * fluctuation
     return target_price
     
 
@@ -394,12 +396,11 @@ def get_current_orders():
 
     """
     path = "v2/supplement/orders_info_history.do"
-    payload = {"symbol": "btc_usdt", "current_page": "1", "page_length": "200"}
+    payload = {"symbol": "itx_usdt", "current_page": "1", "page_length": "200"}
     res = client.http_request("POST", path, payload=payload)
     return res
 
 
 def get_num_of_orders():
-    print(f"get_num_of_orders: {get_current_orders()}")
     list_of_orders = get_current_orders()["data"]["orders"]
     return len(list_of_orders)

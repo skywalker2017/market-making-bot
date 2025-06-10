@@ -1,6 +1,8 @@
 import time
 import traceback
+import random
 from src.utils import (
+    cancel_one_order,
     place_order,
     cancel_all_orders,
     cancel_list_of_orders,
@@ -39,11 +41,14 @@ def market_making(
         initial_safi_balance = (
             initial_balance["itx"]["free"] + initial_balance["itx"]["locked"]
         )
+        shield_high_price = 1
+        shield_low_price = 0.9
+        shield_order_ids = []
+
 
         while True:
             try:
                 order_book = get_order_book(SYMBOL)
-                print("order_book", order_book)
 
                 balance = fetch_account_balance()
 
@@ -57,11 +62,6 @@ def market_making(
                     initial_safi_balance, safi_balance
                 )
 
-                # Check if changes exceed the pause thresholds
-                # if usdt_change < -10:
-                #     usdt_pause = True
-                # if safi_change < -10:
-                #     safi_pause = True
 
                 # Check if changes have recovered
                 if usdt_change > -1:
@@ -74,126 +74,185 @@ def market_making(
                     data = order_book["data"]
                     # The price a buyer is willing to pay
                     bid_price = float(data["bidPrice"])
+                    bid_qty = float(data["bidQty"])
                     # The price a seller is willing to accept
                     ask_price = float(data["askPrice"])
+                    ask_qty = float(data["askQty"])
+
+                    if bid_price > shield_high_price:
+                        shield_high_price += 0.1
+                        shield_low_price += 0.1
+                        cancel_list_of_orders(SYMBOL, shield_order_ids)
+                        shield_order_ids = []
+                        buy_res = place_order(
+                            SYMBOL,
+                            "buy",
+                            100,
+                            shield_low_price,
+                        )
+                        sell_res = place_order(
+                            SYMBOL,
+                            "sell",
+                            100,
+                            shield_high_price,
+                        )
+                        if sell_res["msg"] == "Success":
+                            shield_order_ids.append(sell_res["data"]["order_id"])
+
+                    if bid_price < shield_low_price:
+                        shield_high_price -= 0.1
+                        shield_low_price -= 0.1
+                        cancel_list_of_orders(SYMBOL, shield_order_ids)
+                        shield_order_ids = []
+                        buy_res = place_order(
+                            SYMBOL,
+                            "buy",
+                            100,
+                            shield_low_price,
+                        )
+                        sell_res = place_order(
+                            SYMBOL,
+                            "sell",
+                            100,
+                            shield_high_price,
+                        )
+                        if sell_res["msg"] == "Success":
+                            shield_order_ids.append(sell_res["data"]["order_id"])
+
 
                     target_price = get_target_price()
-                    spread = 0.01
+                    print(f"order_book: {order_book}, target_price: {target_price}")
+
+                    spread = random.uniform(0.01, 0.012)
+                    gap_ratio = abs(bid_price - ask_price) / ((ask_price + bid_price) / 2)
 
                     if target_price < bid_price:
                         base_buy_price = bid_price * (1 - spread)
-                        base_sell_price = ask_price * (1 - spread)
+                        base_sell_price = ask_price * (1 - (spread * (1 + gap_ratio)))                            
+                        
+                        ask_qty = ask_qty / 2
+                        bid_qty = bid_qty * 2
                     elif target_price > ask_price:
-                        base_buy_price = bid_price * (1 + spread)
+                        base_buy_price = bid_price * (1 + (spread * (1 + gap_ratio)))
                         base_sell_price = ask_price * (1 + spread)
+                        bid_qty = bid_qty / 2
+                        ask_qty = ask_qty * 2
                     else:
                         base_buy_price = bid_price * (1 + spread)
                         base_sell_price = ask_price * (1 - spread)
 
+                    if base_buy_price > ask_price:
+                        base_buy_price = ask_price
+                    if base_sell_price < bid_price:
+                        base_sell_price = bid_price
+
                     # Calculate market volatility
                     current_volatility = get_dynamic_volatilit(60)
 
-                    # Dynamic Spread: More sophisticated and responsive strategy that adapts to market volatility.
-                    # spread = calculate_dynamic_spread(current_volatility)
-
-                    # Check if there is other self made orders
                     current_orders_number = get_num_of_orders()
-                    # if So cancel only the orders in the list
-                    if current_orders_number > num_orders:
-                        cancel_list_of_orders(SYMBOL, sell_order_ids)
-                        cancel_list_of_orders(SYMBOL, buy_order_ids)
-                    # if Not Cancel All Orders for fast exwcution
-                    elif current_orders_number <= num_orders:
-                        cancel_all_orders(SYMBOL)
-                        sell_order_ids.clear()
-                        buy_order_ids.clear()
-
-                    # best_prices = get_best_price()
-                    # best_sell_price = best_prices["best_sell"]
-                    # best_buy_price = best_prices["best_buy"]
-                    # best_sell_price = base_sell_price
-
-                    # Get the best prices for selling and buying for a low market
-                    best_buy_price = get_buy_price_in_spread()
-                    best_sell_price = get_sell_price_in_spread()
-
-                    # Get the best prices for selling and buying for a low market
-                    best_buy_price = get_buy_price_in_spread()
-                    best_sell_price = base_sell_price
 
                     buy_total_order_size = calculate_order_size(
                         "buy",
-                        current_volatility,
+                        ask_qty,
                         max_order_size,
                         min_order_size,
                     )
 
-                    buy_order_sizes = calculate_order_sizes(
-                        buy_total_order_size, num_orders
-                    )
+                    # buy_order_sizes = calculate_order_sizes(
+                    #     buy_total_order_size, num_orders
+                    # )
 
                     sell_total_order_size = calculate_order_size(
                         "sell",
-                        current_volatility,
+                        bid_qty,
                         max_order_size,
                         min_order_size,
                     )
 
-                    sell_order_sizes = calculate_order_sizes(
-                        sell_total_order_size, num_orders
+                    # sell_order_sizes = calculate_order_sizes(
+                    #     sell_total_order_size, num_orders
+                    # )
+                    buy_res = place_order(
+                        SYMBOL,
+                        "buy",
+                        buy_total_order_size,
+                        base_buy_price,
                     )
 
+
+                    sell_res = place_order(
+                        SYMBOL,
+                        "sell",
+                        sell_total_order_size,
+                        base_sell_price,
+                    )
+                    if sell_order_ids.__len__() > num_orders:
+                        cancel_one_order(SYMBOL, sell_order_ids[0])
+                        sell_order_ids.remove(sell_order_ids[0])
+                    if buy_order_ids.__len__() > num_orders:
+                        cancel_one_order(SYMBOL, buy_order_ids[0])
+                        buy_order_ids.remove(buy_order_ids[0])
+
+                    if buy_res["msg"] == "Success":
+                        buy_order_ids.append(buy_res["data"]["order_id"])
+                    else:
+                        print(buy_res)
+                    if sell_res["msg"] == "Success":
+                        sell_order_ids.append(sell_res["data"]["order_id"])
+                    else:
+                        print(sell_res)
+
                     # A loop for placing multiple orders
-                    for i in range(num_orders):
-                        price_step_percentage = get_price_step_percentage(
-                            i, base_price_step_percentage
-                        )
+                    # for i in range(num_orders):
+                    #     price_step_percentage = get_price_step_percentage(
+                    #         i, base_price_step_percentage
+                    #     )
 
-                        # BUY Orders
-                        if not usdt_pause:
-                            if safi_pause:
-                                best_buy_price = get_buy_price_in_spread()
-                            else:
-                                best_buy_price = base_buy_price
+                    #     # BUY Orders
+                    #     if not usdt_pause:
+                    #         if safi_pause:
+                    #             best_buy_price = get_buy_price_in_spread()
+                    #         else:
+                    #             best_buy_price = base_buy_price
 
-                            if i == 0:
-                                buy_price = best_buy_price
-                            else:
-                                buy_price = best_buy_price * (
-                                    1 - i * price_step_percentage
-                                )
+                    #         if i == 0:
+                    #             buy_price = best_buy_price
+                    #         else:
+                    #             buy_price = best_buy_price * (
+                    #                 1 - i * price_step_percentage
+                    #             )
 
-                            res = place_order(
-                                SYMBOL,
-                                "buy_maker",
-                                buy_order_sizes[i],
-                                buy_price,
-                            )
-                            if res["msg"] == "Success":
-                                buy_order_ids.append(res["data"]["order_id"])
+                    #         res = place_order(
+                    #             SYMBOL,
+                    #             "buy_maker",
+                    #             buy_order_sizes[i],
+                    #             buy_price,
+                    #         )
+                    #         # if res["msg"] == "Success":
+                    #         #     buy_order_ids.append(res["data"]["order_id"])
 
-                        # SEll Orders
-                        if not safi_pause:
+                    #     # SEll Orders
+                    #     if not safi_pause:
 
-                            if i == 0:
-                                sell_price = best_sell_price
-                                print(f"Best Sell Order: {best_sell_price}")
-                            else:
-                                sell_price = base_sell_price * (
-                                    1 + i * price_step_percentage
-                                )
-                            res = place_order(
-                                SYMBOL, "sell_maker", sell_order_sizes[i], sell_price
-                            )
-                            if res["msg"] == "Success":
-                                sell_order_ids.append(res["data"]["order_id"])
+                    #         if i == 0:
+                    #             sell_price = best_sell_price
+                    #             print(f"Best Sell Order: {best_sell_price}")
+                    #         else:
+                    #             sell_price = base_sell_price * (
+                    #                 1 + i * price_step_percentage
+                    #             )
+                    #         res = place_order(
+                    #             SYMBOL, "sell_maker", sell_order_sizes[i], sell_price
+                    #         )
+                    #         if res["msg"] == "Success":
+                    #             sell_order_ids.append(res["data"]["order_id"])
 
-                time.sleep(get_dynamic_sleep_time(current_volatility))
+                time.sleep(get_dynamic_sleep_time())
 
             except Exception as e:
                 print(f"An error occurred: {e}")
                 traceback.print_exc()
-                time.sleep(10)
+                time.sleep(get_dynamic_sleep_time())
     except KeyboardInterrupt:
         cancel_list_of_orders(SYMBOL, buy_order_ids)
         cancel_list_of_orders(SYMBOL, sell_order_ids)
