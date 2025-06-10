@@ -138,8 +138,8 @@ def market_making(
                         bid_qty = bid_qty / 2
                         ask_qty = ask_qty * 2
                     else:
-                        base_buy_price = bid_price * (1 + spread)
-                        base_sell_price = ask_price * (1 - spread)
+                        base_buy_price = bid_price * (1 + gap_ratio/10)
+                        base_sell_price = ask_price * (1 - gap_ratio/10)
 
                     if base_buy_price > ask_price:
                         base_buy_price = ask_price
