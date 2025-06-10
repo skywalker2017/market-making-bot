@@ -80,8 +80,8 @@ def market_making(
                     ask_qty = float(data["askQty"])
 
                     if bid_price > shield_high_price:
-                        shield_high_price += 0.1
-                        shield_low_price += 0.1
+                        shield_high_price += 0.05
+                        shield_low_price += 0.05
                         cancel_list_of_orders(SYMBOL, shield_order_ids)
                         shield_order_ids = []
                         buy_res = place_order(
@@ -100,8 +100,8 @@ def market_making(
                             shield_order_ids.append(sell_res["data"]["order_id"])
 
                     if bid_price < shield_low_price:
-                        shield_high_price -= 0.1
-                        shield_low_price -= 0.1
+                        shield_high_price -= 0.05
+                        shield_low_price -= 0.05
                         cancel_list_of_orders(SYMBOL, shield_order_ids)
                         shield_order_ids = []
                         buy_res = place_order(

@@ -3,11 +3,15 @@ import numpy as np
 from lbank.old_api import BlockHttpClient
 from datetime import datetime, timedelta, timezone
 import random
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 client = BlockHttpClient(
     sign_method="HMACSHA256",
-    api_key="",
-    api_secret="",
+    api_key=os.getenv("LBANK_API_KEY"),
+    api_secret=os.getenv("LBANK_API_SECRET"),
     base_url="https://www.lbkex.net/",
     log_level=logging.ERROR,
 )
