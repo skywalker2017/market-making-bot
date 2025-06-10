@@ -301,7 +301,7 @@ def calculate_standard_deviation(price_changes):
 def get_target_price():
     btc_price = get_current_price("btc_usdt")
     # Add a random fluctuation between -5% and +5% of the base price
-    target_price = (btc_price / 110000) * 1.1
+    target_price = ((btc_price - 110000) / 110000) * 1.1 + 110000
     return target_price
     
 
