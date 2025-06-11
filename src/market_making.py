@@ -91,7 +91,7 @@ def market_making(
                     ask_pressure = float((ask_price_decimal / Decimal('0.01')).quantize(Decimal('1'), rounding=ROUND_HALF_UP) * Decimal('0.01') + Decimal('0.01'))
                     # Round to nearest 0.01 for bid_pressure
                     bid_pressure = float((bid_price_decimal / Decimal('0.01')).quantize(Decimal('1'), rounding=ROUND_HALF_UP) * Decimal('0.01') - Decimal('0.01'))
-                    cancel_list_of_orders(shield_order_ids)
+                    cancel_list_of_orders(SYMBOL, shield_order_ids)
                     shield_order_ids.clear()
                     for i in range(10):
                         order_size = random.randint(15, 30)
