@@ -95,16 +95,16 @@ def market_making(
                     shield_order_ids.clear()
                     for i in range(10):
                         order_size = random.randint(15, 30)
-                        # buy_res = place_order(SYMBOL, "buy", order_size, ask_pressure)
-                        # sell_res = place_order(SYMBOL, "sell", order_size, bid_pressure)
-                        # if buy_res["msg"] == "Success":
-                        #     shield_order_ids.append(buy_res["data"]["order_id"])
-                        # else:
-                        #     print(buy_res)
-                        # if sell_res["msg"] == "Success":
-                        #     shield_order_ids.append(sell_res["data"]["order_id"])
-                        # else:
-                        #     print(sell_res)
+                        buy_res = place_order(SYMBOL, "buy", order_size, bid_pressure)
+                        sell_res = place_order(SYMBOL, "sell", order_size, ask_pressure)
+                        if buy_res is not None and buy_res["msg"] == "Success":
+                            shield_order_ids.append(buy_res["data"]["order_id"])
+                        else:
+                            print(buy_res)
+                        if sell_res is not None and sell_res["msg"] == "Success":
+                            shield_order_ids.append(sell_res["data"]["order_id"])
+                        else:
+                            print(sell_res)
                         ask_pressure = ask_pressure + 0.01
                         bid_pressure = bid_pressure - 0.01
 
@@ -174,11 +174,11 @@ def market_making(
                         cancel_one_order(SYMBOL, buy_order_ids[0])
                         buy_order_ids.remove(buy_order_ids[0])
 
-                    if buy_res["msg"] == "Success":
+                    if buy_res is not None and buy_res["msg"] == "Success":
                         buy_order_ids.append(buy_res["data"]["order_id"])
                     else:
                         print(buy_res)
-                    if sell_res["msg"] == "Success":
+                    if sell_res is not None and sell_res["msg"] == "Success":
                         sell_order_ids.append(sell_res["data"]["order_id"])
                     else:
                         print(sell_res)
