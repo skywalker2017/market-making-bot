@@ -114,6 +114,7 @@ def cancel_one_order(symbol, order_id):
 
 
 def cancel_list_of_orders(symbol, order_ids):
+    print(f"cancel_list_of_orders: {order_ids}")
     """
     Cancel a List of orders used to not intrrupt the other orders
 
@@ -125,8 +126,7 @@ def cancel_list_of_orders(symbol, order_ids):
     if not order_ids:
         return
     for order_id in order_ids:
-        print(cancel_one_order(symbol, order_id))
-        order_ids.remove(order_id)
+        print(f"cancel_one_order: {cancel_one_order(symbol, order_id)}")
 
 
 def get_current_price(symbol):

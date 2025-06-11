@@ -42,8 +42,8 @@ def market_making(
         initial_safi_balance = (
             initial_balance["itx"]["free"] + initial_balance["itx"]["locked"]
         )
-        shield_high_price = 1
-        shield_low_price = 0.9
+        cancel_all_orders(SYMBOL)
+
         shield_order_ids = []
 
 
@@ -91,12 +91,14 @@ def market_making(
                     ask_pressure = float((ask_price_decimal / Decimal('0.01')).quantize(Decimal('1'), rounding=ROUND_HALF_UP) * Decimal('0.01') + Decimal('0.01'))
                     # Round to nearest 0.01 for bid_pressure
                     bid_pressure = float((bid_price_decimal / Decimal('0.01')).quantize(Decimal('1'), rounding=ROUND_HALF_UP) * Decimal('0.01') - Decimal('0.01'))
+
                     cancel_list_of_orders(SYMBOL, shield_order_ids)
                     shield_order_ids.clear()
                     for i in range(10):
                         order_size = random.randint(15, 30)
                         buy_res = place_order(SYMBOL, "buy", order_size, bid_pressure)
                         sell_res = place_order(SYMBOL, "sell", order_size, ask_pressure)
+
                         if buy_res is not None and buy_res["msg"] == "Success":
                             shield_order_ids.append(buy_res["data"]["order_id"])
                         else:
