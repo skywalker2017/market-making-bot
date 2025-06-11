@@ -169,13 +169,6 @@ def market_making(
                         sell_total_order_size,
                         base_sell_price,
                     )
-                    if sell_order_ids.__len__() > num_orders:
-                        cancel_one_order(SYMBOL, sell_order_ids[0])
-                        sell_order_ids.remove(sell_order_ids[0])
-                    if buy_order_ids.__len__() > num_orders:
-                        cancel_one_order(SYMBOL, buy_order_ids[0])
-                        buy_order_ids.remove(buy_order_ids[0])
-
                     if buy_res is not None and buy_res["msg"] == "Success":
                         buy_order_ids.append(buy_res["data"]["order_id"])
                     else:
@@ -184,6 +177,16 @@ def market_making(
                         sell_order_ids.append(sell_res["data"]["order_id"])
                     else:
                         print(sell_res)
+                    if sell_order_ids.__len__() > num_orders:
+                        cancel_one_order(SYMBOL, sell_order_ids[0])
+                        sell_order_ids.remove(sell_order_ids[0])
+                    if buy_order_ids.__len__() > num_orders:
+                        cancel_one_order(SYMBOL, buy_order_ids[0])
+                        buy_order_ids.remove(buy_order_ids[0])
+
+                    print(f"buy_order_ids: {buy_order_ids.__len__()}")
+                    print(f"sell_order_ids: {sell_order_ids.__len__()}") 
+                    print(f"shield_order_ids: {shield_order_ids.__len__()}")
 
                 time.sleep(get_dynamic_sleep_time())
 

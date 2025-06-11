@@ -114,7 +114,6 @@ def cancel_one_order(symbol, order_id):
 
 
 def cancel_list_of_orders(symbol, order_ids):
-    print(f"cancel_list_of_orders: {order_ids}")
     """
     Cancel a List of orders used to not intrrupt the other orders
 
