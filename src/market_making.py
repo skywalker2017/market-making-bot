@@ -1,6 +1,7 @@
 import time
 import traceback
 import random
+from decimal import Decimal, ROUND_HALF_UP
 from src.utils import (
     cancel_one_order,
     place_order,
@@ -79,49 +80,33 @@ def market_making(
                     ask_price = float(data["askPrice"])
                     ask_qty = float(data["askQty"])
 
-                    if bid_price > shield_high_price:
-                        shield_high_price += 0.05
-                        shield_low_price += 0.05
-                        cancel_list_of_orders(SYMBOL, shield_order_ids)
-                        shield_order_ids = []
-                        buy_res = place_order(
-                            SYMBOL,
-                            "buy",
-                            100,
-                            shield_low_price,
-                        )
-                        sell_res = place_order(
-                            SYMBOL,
-                            "sell",
-                            100,
-                            shield_high_price,
-                        )
-                        if sell_res["msg"] == "Success":
-                            shield_order_ids.append(sell_res["data"]["order_id"])
-
-                    if bid_price < shield_low_price:
-                        shield_high_price -= 0.05
-                        shield_low_price -= 0.05
-                        cancel_list_of_orders(SYMBOL, shield_order_ids)
-                        shield_order_ids = []
-                        buy_res = place_order(
-                            SYMBOL,
-                            "buy",
-                            100,
-                            shield_low_price,
-                        )
-                        sell_res = place_order(
-                            SYMBOL,
-                            "sell",
-                            100,
-                            shield_high_price,
-                        )
-                        if sell_res["msg"] == "Success":
-                            shield_order_ids.append(sell_res["data"]["order_id"])
-
-
                     target_price = get_target_price()
                     print(f"order_book: {order_book}, target_price: {target_price}")
+
+                    # Use Decimal for precise rounding to 2 decimal places
+                    ask_price_decimal = Decimal(str(ask_price))
+                    bid_price_decimal = Decimal(str(bid_price))
+                    
+                    # Round to nearest 0.01 and add 0.01 for ask_pressure
+                    ask_pressure = float((ask_price_decimal / Decimal('0.01')).quantize(Decimal('1'), rounding=ROUND_HALF_UP) * Decimal('0.01') + Decimal('0.01'))
+                    # Round to nearest 0.01 for bid_pressure
+                    bid_pressure = float((bid_price_decimal / Decimal('0.01')).quantize(Decimal('1'), rounding=ROUND_HALF_UP) * Decimal('0.01') - Decimal('0.01'))
+                    cancel_list_of_orders(shield_order_ids)
+                    shield_order_ids.clear()
+                    for i in range(10):
+                        order_size = random.randint(15, 30)
+                        buy_res = place_order(SYMBOL, "buy", order_size, ask_pressure)
+                        sell_res = place_order(SYMBOL, "sell", order_size, bid_pressure)
+                        if buy_res["msg"] == "Success":
+                            shield_order_ids.append(buy_res["data"]["order_id"])
+                        else:
+                            print(buy_res)
+                        if sell_res["msg"] == "Success":
+                            shield_order_ids.append(sell_res["data"]["order_id"])
+                        else:
+                            print(sell_res)
+                        ask_pressure = ask_pressure + 0.01
+                        bid_pressure = bid_pressure - 0.01
 
                     spread = random.uniform(0.01, 0.012)
                     gap_ratio = abs(bid_price - ask_price) / ((ask_price + bid_price) / 2)
@@ -146,10 +131,6 @@ def market_making(
                     if base_sell_price < bid_price:
                         base_sell_price = bid_price
 
-                    # Calculate market volatility
-                    current_volatility = get_dynamic_volatilit(60)
-
-                    current_orders_number = get_num_of_orders()
 
                     buy_total_order_size = calculate_order_size(
                         "buy",
@@ -201,51 +182,6 @@ def market_making(
                         sell_order_ids.append(sell_res["data"]["order_id"])
                     else:
                         print(sell_res)
-
-                    # A loop for placing multiple orders
-                    # for i in range(num_orders):
-                    #     price_step_percentage = get_price_step_percentage(
-                    #         i, base_price_step_percentage
-                    #     )
-
-                    #     # BUY Orders
-                    #     if not usdt_pause:
-                    #         if safi_pause:
-                    #             best_buy_price = get_buy_price_in_spread()
-                    #         else:
-                    #             best_buy_price = base_buy_price
-
-                    #         if i == 0:
-                    #             buy_price = best_buy_price
-                    #         else:
-                    #             buy_price = best_buy_price * (
-                    #                 1 - i * price_step_percentage
-                    #             )
-
-                    #         res = place_order(
-                    #             SYMBOL,
-                    #             "buy_maker",
-                    #             buy_order_sizes[i],
-                    #             buy_price,
-                    #         )
-                    #         # if res["msg"] == "Success":
-                    #         #     buy_order_ids.append(res["data"]["order_id"])
-
-                    #     # SEll Orders
-                    #     if not safi_pause:
-
-                    #         if i == 0:
-                    #             sell_price = best_sell_price
-                    #             print(f"Best Sell Order: {best_sell_price}")
-                    #         else:
-                    #             sell_price = base_sell_price * (
-                    #                 1 + i * price_step_percentage
-                    #             )
-                    #         res = place_order(
-                    #             SYMBOL, "sell_maker", sell_order_sizes[i], sell_price
-                    #         )
-                    #         if res["msg"] == "Success":
-                    #             sell_order_ids.append(res["data"]["order_id"])
 
                 time.sleep(get_dynamic_sleep_time())
 
