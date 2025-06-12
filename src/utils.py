@@ -303,6 +303,8 @@ def get_target_price():
     btc_price = get_current_price("btc_usdt")
     # Add a random fluctuation between -5% and +5% of the base price
     target_price = ((btc_price - 110000) / 110000) * 10 + 1
+    if target_price < 0.7:
+        target_price = 0.7
     return target_price
     
 
