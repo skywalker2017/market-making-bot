@@ -299,14 +299,57 @@ def calculate_standard_deviation(price_changes):
     """
     return np.std(price_changes)
 
-def get_target_price():
-    btc_price = get_current_price("btc_usdt")
-    # Add a random fluctuation between -5% and +5% of the base price
-    target_price = ((btc_price - 110000) / 110000) * 10 + 1
-    if target_price < 0.7:
-        target_price = 0.7
+def calculate_target_price(btc_price):
+    # Define the ranges
+    btc_min = 0
+    btc_max = 220000
+    btc_mid = 110000
+    
+    # Define target price bounds
+    target_min = 0
+    target_max = 2
+    
+    # First, normalize BTC price to be between 0 and 1
+    normalized_btc = btc_price / btc_max
+    
+    # Calculate how far we are from the center (0.5 when normalized)
+    # This will be 0 at the center and approach 0.5 at the extremes
+    distance_from_center = abs(normalized_btc - 0.5)
+    
+    # Calculate a fluctuation factor that's highest at the center (100,000)
+    # and lowest at the extremes (0 and 200,000)
+    # This creates a parabolic curve: 1.0 at center, 0.0 at extremes
+    fluctuation_factor = 1.0 - (4 * distance_from_center * distance_from_center)
+    
+    # Calculate base target price - linear relationship that equals 1.0 at 100,000
+    base_target_price = normalized_btc * 2.0
+    
+    # Apply a symmetric fluctuation that creates a curve
+    # The fluctuation is applied as a deviation from the linear relationship
+    # We use a sine-like curve: higher in the middle, lower at extremes
+    max_deviation = 1.3  # Maximum deviation from linear relationship
+    
+    # Calculate the deviation amount based on position
+    # This creates a curve that's 0 at 0, 0 at 100,000, and 0 at 200,000
+    # With maximum effect at 50,000 and 150,000
+    deviation = max_deviation * fluctuation_factor * (normalized_btc - 0.5)
+    
+    # Apply the deviation to create the final target price
+    target_price = base_target_price + deviation
+    
+    # Ensure target price is exactly 1.0 at BTC price of 100,000
+    if btc_price == btc_mid:
+        target_price = 1.0
+    
+    # Ensure target price stays within bounds
+    target_price = max(target_min, min(target_max, target_price))
+    
     return target_price
     
+
+def get_target_price():
+    btc_price = get_current_price("btc_usdt")
+    return calculate_target_price(btc_price)
 
 
 def get_dynamic_volatilit(period):
