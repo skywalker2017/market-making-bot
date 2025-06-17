@@ -117,13 +117,13 @@ def market_making(
                         base_buy_price = bid_price * (1 - spread)
                         base_sell_price = ask_price * (1 - (spread * (1 + gap_ratio)))                            
                         
-                        ask_qty = ask_qty / 2
-                        bid_qty = bid_qty * 2
+                        ask_qty = ask_qty / 1.2
+                        bid_qty = bid_qty * 1.2
                     elif target_price > ask_price:
                         base_buy_price = bid_price * (1 + (spread * (1 + gap_ratio)))
                         base_sell_price = ask_price * (1 + spread)
-                        bid_qty = bid_qty / 2
-                        ask_qty = ask_qty * 2
+                        bid_qty = bid_qty / 1.2
+                        ask_qty = ask_qty * 1.2
                     else:
                         base_buy_price = bid_price * (1 + gap_ratio/10)
                         base_sell_price = ask_price * (1 - gap_ratio/10)
