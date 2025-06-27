@@ -95,7 +95,7 @@ def market_making(
                     cancel_list_of_orders(SYMBOL, shield_order_ids)
                     shield_order_ids.clear()
                     for i in range(10):
-                        order_size = random.randint(15, 30)
+                        order_size = random.randint(5, 10)
                         buy_res = place_order(SYMBOL, "buy", order_size, bid_pressure)
                         sell_res = place_order(SYMBOL, "sell", order_size, ask_pressure)
 
