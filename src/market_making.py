@@ -30,7 +30,9 @@ BTC_SYMBOL = "btc_usdt"
 def market_making(
     max_order_size,
     min_order_size,
-    num_orders=10,
+    max_sheld_order_size,
+    min_sheld_order_size,
+    num_orders=20,
     base_price_step_percentage=0.00009,
 ):
     try:
@@ -95,7 +97,7 @@ def market_making(
                     cancel_list_of_orders(SYMBOL, shield_order_ids)
                     shield_order_ids.clear()
                     for i in range(10):
-                        order_size = random.randint(5, 10)
+                        order_size = random.randint(min_sheld_order_size, max_sheld_order_size)
                         buy_res = place_order(SYMBOL, "buy", order_size, bid_pressure)
                         sell_res = place_order(SYMBOL, "sell", order_size, ask_pressure)
 
