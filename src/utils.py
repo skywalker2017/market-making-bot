@@ -302,8 +302,8 @@ def calculate_standard_deviation(price_changes):
 def calculate_target_price(btc_price):
     # Define the ranges
     btc_min = 0
-    btc_max = 230000
-    btc_mid = 115000
+    btc_max = 234000
+    btc_mid = 117000
     
     # Define target price bounds
     target_min = 0
