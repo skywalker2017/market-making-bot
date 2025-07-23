@@ -302,8 +302,22 @@ def calculate_standard_deviation(price_changes):
 def calculate_target_price(btc_price):
     # Define the ranges
     btc_min = 0
-    btc_max = 232000
-    btc_mid = 116000
+    
+    # Read btc_mid from file in root directory
+    try:
+        import os
+        # Get the project root directory
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        btc_mid_path = os.path.join(root_dir, 'btc_mid.txt')
+        
+        with open(btc_mid_path, 'r') as f:
+            btc_mid = float(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        # Fallback to default if file doesn't exist or contains invalid data
+        btc_mid = 116000
+        
+    btc_max = 2 * btc_mid
+
     
     # Define target price bounds
     target_min = 0
