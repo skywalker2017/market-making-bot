@@ -341,7 +341,7 @@ def calculate_target_price(btc_price):
     # Apply a symmetric fluctuation that creates a curve
     # The fluctuation is applied as a deviation from the linear relationship
     # We use a sine-like curve: higher in the middle, lower at extremes
-    max_deviation = 1.5  # Maximum deviation from linear relationship
+    max_deviation = 1.2  # Maximum deviation from linear relationship
     
     # Calculate the deviation amount based on position
     # This creates a curve that's 0 at 0, 0 at 100,000, and 0 at 200,000
