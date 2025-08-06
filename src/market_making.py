@@ -32,7 +32,7 @@ def market_making(
     min_order_size,
     max_sheld_order_size,
     min_sheld_order_size,
-    num_orders=50,
+    num_orders=20,
     base_price_step_percentage=0.00009,
 ):
     try:
